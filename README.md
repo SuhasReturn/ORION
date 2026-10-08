@@ -41,3 +41,7 @@ curl http://localhost:5000/api/health
 ```
 
 Both endpoints return JSON confirming the service is running and healthy.
+
+## Local database
+
+ORION uses Prisma ORM with a local SQLite database at `data/orion.db`. The complete `data/` directory is ignored by Git to keep user information local. See [the local database guide](docs/local-database.md) for initialization, migration, inspection, and health-check commands.
