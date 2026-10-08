@@ -1,0 +1,40 @@
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  color: #e8edf5;
+  background: #101827;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+}
+
+.app-shell {
+  display: grid;
+  min-height: 100vh;
+  place-content: center;
+  padding: 2rem;
+  text-align: center;
+}
+
+h1 {
+  margin: 0;
+  color: #69d6c0;
+  font-size: clamp(3rem, 12vw, 7rem);
+  letter-spacing: 0.12em;
+}
+
+p {
+  margin: 0.75rem 0 0;
+  font-size: 1.1rem;
+}
+
+.local-note {
+  color: #a9b6ca;
+  font-size: 0.95rem;
+}
