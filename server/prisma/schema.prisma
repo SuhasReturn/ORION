@@ -12,7 +12,7 @@ model User {
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
   candidateProfile CandidateProfile?
-  jobPreferences   JobPreference[]
+  jobPreference    JobPreference?
   applications     Application[]
   contacts         Contact[]
   outreach         Outreach[]
@@ -31,8 +31,12 @@ model CandidateProfile {
   education      String?
   degree         String?
   branch         String?
+  university     String?
   graduationYear Int?
   cgpa           Float?
+  experienceLevel String?
+  currentRole    String?
+  bio            String?
   resumePath     String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -47,22 +51,83 @@ model Skill {
   name      String             @unique
   createdAt DateTime           @default(now())
   profiles  CandidateProfile[]
+  requiredFor JobPreferenceRequiredSkill[]
+  preferredFor JobPreferencePreferredSkill[]
+  jobs      Job[]
 }
 
 model JobPreference {
   id                 String   @id @default(cuid())
-  userId             String
+  userId             String   @unique
   desiredRoles       String?
   preferredLocations String?
   preferredWorkMode  String?
   minimumExperience  Int?
   maximumExperience  Int?
   minimumSalary      Int?
+  employmentType     String   @default("any")
+  experienceLevel    String   @default("student")
+  willingToRelocate  Boolean  @default(false)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
   user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roles              JobPreferenceRole[]
+  locations          JobPreferenceLocation[]
+  industries         JobPreferenceIndustry[]
+  requiredSkills     JobPreferenceRequiredSkill[]
+  preferredSkills    JobPreferencePreferredSkill[]
 
   @@index([userId])
+}
+
+model JobPreferenceRole {
+  id              String        @id @default(cuid())
+  jobPreferenceId String
+  value           String
+  jobPreference   JobPreference @relation(fields: [jobPreferenceId], references: [id], onDelete: Cascade)
+
+  @@unique([jobPreferenceId, value])
+  @@index([value])
+}
+
+model JobPreferenceLocation {
+  id              String        @id @default(cuid())
+  jobPreferenceId String
+  value           String
+  jobPreference   JobPreference @relation(fields: [jobPreferenceId], references: [id], onDelete: Cascade)
+
+  @@unique([jobPreferenceId, value])
+  @@index([value])
+}
+
+model JobPreferenceIndustry {
+  id              String        @id @default(cuid())
+  jobPreferenceId String
+  value           String
+  jobPreference   JobPreference @relation(fields: [jobPreferenceId], references: [id], onDelete: Cascade)
+
+  @@unique([jobPreferenceId, value])
+  @@index([value])
+}
+
+model JobPreferenceRequiredSkill {
+  jobPreferenceId String
+  skillId         String
+  jobPreference   JobPreference @relation(fields: [jobPreferenceId], references: [id], onDelete: Cascade)
+  skill           Skill         @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@id([jobPreferenceId, skillId])
+  @@index([skillId])
+}
+
+model JobPreferencePreferredSkill {
+  jobPreferenceId String
+  skillId         String
+  jobPreference   JobPreference @relation(fields: [jobPreferenceId], references: [id], onDelete: Cascade)
+  skill           Skill         @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@id([jobPreferenceId, skillId])
+  @@index([skillId])
 }
 
 model Company {
@@ -86,11 +151,52 @@ model Job {
   location     String?
   description  String?
   jobUrl       String?
+  workMode     String?
+  employmentType String?
+  salaryText   String?
   source       String        @default("manual")
   externalId   String?
   postedAt     DateTime?
   discoveredAt DateTime      @default(now())
   status       String        @default("discovered")
+
+  // Module 5: Normalization & Deduplication
+  normalizedTitle          String?
+  normalizedCompany        String?
+  normalizedLocation       String?
+  normalizedWorkMode       String?
+  normalizedEmploymentType String?
+  salaryMin                Float?
+  salaryMax                Float?
+  salaryCurrency           String?
+  isDuplicate              Boolean       @default(false)
+  duplicateConfidence      Float?
+  duplicateReason          String?
+  canonicalJobId           String?
+  canonicalJob             Job?          @relation("JobDuplicates", fields: [canonicalJobId], references: [id], onDelete: SetNull)
+  duplicateJobs            Job[]         @relation("JobDuplicates")
+  skills                   Skill[]
+
+  // Module 6: Job Filtering
+  filterStatus             String        @default("pending")
+  filterReasons            String?
+
+  // Module 7: Matching & Scoring
+  matchScore               Float?
+  matchRating              String?
+  matchReasons             String?
+  matchedSkills            String?
+  missingSkills            String?
+
+  // Module 8: Local AI / Ollama
+  aiSummary                String?
+  aiMatchExplanation       String?
+  aiProcessedAt            DateTime?
+
+  // Module 9: Job CRM
+  isSaved                  Boolean       @default(false)
+  notes                    String?
+
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   company      Company?      @relation(fields: [companyId], references: [id], onDelete: SetNull)
@@ -102,6 +208,10 @@ model Job {
   @@index([companyId])
   @@index([status])
   @@index([discoveredAt])
+  @@index([canonicalJobId])
+  @@index([filterStatus])
+  @@index([matchScore])
+  @@index([isSaved])
 }
 
 model Contact {
@@ -114,6 +224,8 @@ model Contact {
   type      String?
   profileUrl String?
   email     String?
+  phone     String?
+  notes     String?
   source    String?
   status    String     @default("active")
   createdAt DateTime   @default(now())
