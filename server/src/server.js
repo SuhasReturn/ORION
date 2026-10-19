@@ -13,6 +13,8 @@ import { filterJobsForLocalUser } from './services/job-filtering/filteringServic
 import { matchJobsForLocalUser } from './services/job-matching/matchingService.js'
 import { aiService } from './services/ai/aiService.js'
 
+import { registerModuleRoutes } from './routes/moduleRoutes.js'
+
 dotenv.config()
 
 const app = express()
@@ -51,8 +53,28 @@ const upload = multer({
   },
 })
 
-app.use(cors())
-app.use(express.json())
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:5000',
+  'http://127.0.0.1:5000',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+]
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin) || origin.startsWith('file://')) {
+      return callback(null, true)
+    }
+    return callback(new Error('CORS_NOT_ALLOWED'))
+  },
+  credentials: true,
+}))
+app.use(express.json({ limit: '2mb' }))
+
+// Register Modules 11-18 routes
+registerModuleRoutes(app)
 
 function text(value) {
   return typeof value === 'string' && value.trim() ? value.trim() : null
@@ -759,6 +781,14 @@ app.use((error, _request, response, _next) => {
     return response.status(400).json({ success: false, message: 'Only PDF resume files are allowed.' })
   }
 
+  if (error.message === 'CORS_NOT_ALLOWED') {
+    return response.status(403).json({ success: false, message: 'Cross-origin request blocked.' })
+  }
+
+  if (error.status === 413 || error.type === 'entity.too.large') {
+    return response.status(413).json({ success: false, message: 'Request payload too large.' })
+  }
+
   console.error('Request failed:', error)
   response.status(500).json({ success: false, message: 'The local request could not be completed.' })
 })
@@ -767,8 +797,8 @@ export { app }
 
 const isDirectRun = process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])
 if (isDirectRun) {
-  app.listen(port, () => {
-    console.log(`ORION backend is running at http://localhost:${port}`)
+  app.listen(port, '127.0.0.1', () => {
+    console.log(`ORION backend is running at http://127.0.0.1:${port}`)
   })
 }
 

@@ -3,7 +3,34 @@
   "version": "0.1.0",
   "private": true,
   "description": "Opportunity & Recruitment Intelligence Operations Network",
+  "main": "electron/main.cjs",
   "scripts": {
-    "install:all": "npm install --prefix client && npm install --prefix server"
+    "install:all": "npm install --prefix client && npm install --prefix server",
+    "dev:server": "npm run dev --prefix server",
+    "start:server": "npm start --prefix server",
+    "dev:client": "npm run dev --prefix client",
+    "build:client": "npm run build --prefix client",
+    "test": "npm test --prefix server",
+    "test:server": "npm test --prefix server",
+    "desktop:dev": "electron .",
+    "desktop:build": "electron-builder --win",
+    "release:check": "node scripts/release-check.js"
+  },
+  "build": {
+    "appId": "com.orion.app",
+    "productName": "ORION",
+    "directories": {
+      "output": "dist-desktop"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "files": [
+      "electron/**/*",
+      "client/dist/**/*",
+      "server/src/**/*",
+      "server/prisma/**/*",
+      "server/package.json"
+    ]
   }
 }
